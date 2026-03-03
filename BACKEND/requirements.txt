@@ -1,0 +1,14 @@
+pandas
+openai
+python-dotenv
+opencv-python
+numpy
+openai
+PyMuPDF
+tensorflow
+python-doctr
+huggingface_hub
+fastapi
+uvicorn[standard]
+python-multipart
+tqdm
