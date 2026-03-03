@@ -27,7 +27,7 @@ It handles single files, images, PDFs, or entire directories and ZIP
 archives.
 
 ## Key Features
-
+(Complete project is paid for more query mail at ha2153329@gmail.com)
 ### OCR Layer
 
 -   Uses **Doctr OCR** with locally stored `.pt` model weights\
