@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ABL Muawin Form</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+  <script src="config.js"></script>
+
+  <!-- Minimal styles so modal/preview are visible -->
+  <style>
+    :root {
+      --brand:#04337D;
+      --bg:#f5f7fb;
+      --text:#1f2937;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Montserrat", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+    }
+    .navbar {
+      width: 100vw;
+      position: fixed;
+      top: 0;
+      left: 0;
+      background: #04337D;
+      padding: 1rem 0 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 1000;
+      margin-bottom: 0;
+      color: white;
+    }
+    .navbar-branding {
+      font-weight: bold;
+      font-style: italic;
+      color: #d1d5db;
+      font-size: 1.0rem;
+      margin-right: 2rem;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+    .navbar-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+    .form-container {
+      background: #fff;
+      padding: 2.5rem 2.5rem 2.5rem 2.5rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 600px;
+      height: 580px;
+
+      margin: 2.5rem 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: stretch;
+      overflow: auto;
+    }
+    
+    .form-title {
+      margin: 0 0 1rem 0;
+      font-size: 1.6rem;
+      text-align: center;
+      color: var(--brand);
+    }
+    .form-group {
+      
+      margin-top: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+    #uploadForm {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      flex: 1 1 auto;
+      height: 100%;
+      min-height: 0;
+      justify-content: stretch;
+    }
+    
+    .file-upload {
+      border: 2px dashed #cbd5e1;
+      border-radius: 10px;
+      padding: 18px;
+      background:#fafafa;
+      cursor: pointer;
+      position: relative;
+      height: 140px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .file-upload-text, .file-types {
+      text-align: center;
+      width: 100%;
+      display: block;
+    }
+    
+    .file-upload.dragover { background:#f0f7ff; border-color: var(--brand); }
+    .file-input{ position:absolute; inset:0; opacity:0; cursor:pointer;}
+    .uploaded-files { margin-top: 10px; font-size: 14px; color:#334155;}
+    .uploaded-file { display:flex; justify-content:space-between; align-items:center; background:#f8fafc; padding:8px 12px; border-radius:8px; }
+    .remove-file {
+      background:#ef4444; color:#fff; border:none; border-radius:6px; padding:6px 10px; cursor:pointer;
+    }
+    .input-field {
+      width:100%; padding:10px 12px; border:1px solid #e2e8f0; border-radius:8px; outline:none;
+    }
+    .input-list-container { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .input-tags { display:flex; gap:8px; flex-wrap:wrap; }
+    .tag {
+      background:#e5efff; color:var(--brand); padding:6px 10px; border-radius:999px; display:inline-flex; align-items:center; gap:8px;
+    }
+    .tag-remove { border:none; background:transparent; font-size:16px; cursor:pointer; color:var(--brand); }
+
+    .form-label {
+      font-weight: bold;
+      font-size: 1.13rem;
+      margin-bottom: 0.4em;
+      display: inline-block;
+    }
+    .submit-btn {
+      background: var(--brand);
+      color: #fff;
+      border: none;
+      padding: 12px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+      width: 100%;
+      font-size: 1.08rem;
+      margin-top: 10px;
+      display: block;
+    }
+    .submit-btn:disabled { opacity:.5; cursor:not-allowed; }
+
+    /* Loading overlay */
+    .loading-overlay {
+      position: fixed; inset: 0; display:none;
+      align-items:center; justify-content:center; flex-direction:column;
+      background: rgba(0,0,0,.35); z-index: 9999;
+    }
+    .loading-spinner {
+      width: 60px; height: 60px;
+      border: 6px solid #f3f4f6; border-top: 6px solid var(--brand);
+      border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 1rem;
+      background: transparent;
+    }
+    .loading-text { color:#fff; font-size: 1.1rem; font-weight:700; }
+    @keyframes spin { 0% {transform: rotate(0deg);} 100% {transform: rotate(360deg);} }
+
+    /* Results modal */
+    .modal-overlay {
+      position: fixed; inset: 0; display:none; align-items:center; justify-content:center; background: rgba(0,0,0,.38); z-index: 9000;
+    }
+    .modal-overlay.show { display:flex; }
+    .modal-content {
+      width: 100%; max-height: 100vh; overflow: hidden;
+      background: #fff; border-radius: 14px; box-shadow: 0 20px 60px rgba(0,0,0,.2); display:flex; flex-direction:column;
+    }
+    .modal-header { 
+        background-color: #04337D !important;
+        color: white !important;
+        padding: 1.3rem 14px; border-bottom:1px solid #e5e7eb; min-height: 36px; }
+    .modal-title {
+      font-size: 1.1rem !important;
+      margin: 0 0 0 0 !important;
+      line-height: 1.2;
+    }
+    .close-button { background: transparent; border: none; font-size: 28px; line-height: 1; cursor: pointer; color:#64748b; }
+    .modal-body {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0; min-height: 60vh; overflow: hidden;
+    }
+    .modal-table-container { padding: 16px; overflow:auto; border-right:1px solid #eef2f7; }
+    .modal-preview-container { padding: 16px; overflow:auto; background:#f8fafc; }
+
+    table.output-table { width:100%; border-collapse: collapse; font-size: 14px; }
+    table.output-table th, table.output-table td { border-bottom: 1px solid #e5e7eb; padding: 10px; vertical-align: top; }
+    table.output-table tr:hover td { background:#f9fbff; }
+    table.output-table.edit-mode td { background: #fff7ed; }
+
+    .pdf-nav-controls {
+      display:flex; justify-content:center; align-items:center; gap:1rem; margin: .5rem 0 1rem;
+      background:#fff; border-radius: 10px; padding: .75rem 1rem; box-shadow: 0 2px 8px rgba(0,0,0,.1);
+    }
+    .pdf-nav-controls button {
+      background: var(--brand); color:#fff; border:none; border-radius: 8px; padding: 8px 14px; cursor:pointer; font-weight:700;
+    }
+    .pdf-nav-controls button:disabled { background:#cbd5e1; cursor:not-allowed; }
+    .pdf-nav-controls span { color: var(--brand); font-weight:700; }
+
+    canvas { max-width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; margin: 8px 0; background:#fff; }
+    .modal-preview-container img { max-width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; display:block; }
+  </style>
+</head>
+<body>
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Loading...</div>
+  </div>
+
+  <!-- Results Modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-content">
+      <div class="modal-header" style="display:flex;align-items:center; justify-content: space-between;">
+        <div style="display:flex; align-items:center; gap:1rem;">
+          <h2 class="modal-title" style="margin-right:12px;">Extraction Results</h2>
+          <!-- Edit button removed: editing is now inline on double-click -->
+        </div>
+        <button class="close-button" id="closeModal" onclick="closeResultsModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="modal-table-container">
+          <table class="output-table" id="outputTable">
+            <thead>
+              <tr><th>Field Name</th><th>Extracted Value</th></tr>
+            </thead>
+            <tbody id="outputTableBody"></tbody>
+          </table>
+        </div>
+        <div class="modal-preview-container" id="modalPreviewContainer"></div>
+      </div>
+
+      <div style="display:flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 12px 18px 16px 18px;">
+        <button id="submitEditBtn" style="display:flex; justify-content:center; background:#04337D;color:#fff;border:none;padding:8px 18px;border-radius:8px;cursor:pointer;font-weight:bold;min-width:100px;" onclick="submitEditedResults()">Submit</button>
+        <div style="display:none;align-items:center;gap:1rem;">
+          <button id="prevResultBtn" onclick="showPrevResult()" disabled>Previous</button>
+          <span id="resultCounter" style="font-size: 1rem; color: #04337D;"></span>
+          <button id="nextResultBtn" onclick="showNextResult()" disabled>Next</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="navbar">
+    <span class="navbar-title">DOC.AI</span>
+    <span class="navbar-branding">Product by AI Team</span>
+  </nav>
+
+  <div style="display: flex; justify-content: center; align-items: center; min-height: 100vh; padding-top: 4rem;">
+  <div class="form-container">
+    <h1 class="form-title">Document Digitalization</h1>
+
+    <form id="uploadForm">
+      <!-- Input Type Selection -->
+      <div class="form-group" style="margin-bottom: 10px; margin-top: 5px;">
+        <label class="form-label">Input Type</label>
+        <div style="display: flex; gap: 2rem; align-items: center;">
+          <label><input type="radio" name="inputType" value="file" checked> File Upload</label>
+          <label><input type="radio" name="inputType" value="url" disabled style="cursor:not-allowed;opacity:0.5;"> URL Input</label>
+        </div>
+      </div>
+
+      <!-- File Upload Section -->
+      <div class="form-group" id="fileUploadSection">
+        <label class="form-label">Upload Files</label>
+        <div class="file-upload" id="fileUpload">
+          <input type="file" id="fileInput" class="file-input" accept=".zip,.pdf,.png,.jpeg,.jpg">
+          <div class="file-upload-text">
+            <strong>Click to upload</strong> or drag and drop
+          </div>
+          <div class="file-types">ZIP, PDF, PNG, JPEG, JPG files only</div>
+        </div>
+        <div class="uploaded-files" id="uploadedFiles"></div>
+        <div class="error" id="fileError" style="color:#ef4444;"></div>
+      </div>
+
+      <!-- URL Input Section -->
+      <div class="form-group" id="urlInputSection" style="display:none;">
+        <label class="form-label">Enter Document URL</label>
+        <input type="url" id="urlInput" class="input-field" placeholder="https://example.com/document.pdf">
+        <div class="error" id="urlError" style="color:#ef4444;"></div>
+      </div>
+
+      <!-- Input List Section -->
+      <div class="form-group">
+        <label class="form-label">Input Values</label>
+        <div class="input-list-container">
+          <input type="text" id="inputField" class="input-field" placeholder="Enter a value and press Enter">
+          <div class="input-tags" id="inputTags"></div>
+        </div>
+      </div>
+
+      <button type="submit" class="submit-btn" id="submitBtn" disabled>Submit</button>
+    </form>
+  </div>
+  </div>
+
+  <!-- JSZip for ZIP file extraction -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    const backend_url = window.APP_CONFIG && window.APP_CONFIG.backendURL ? window.APP_CONFIG.backendURL : "__BACKEND_URL__";
+    console.log("Backend URL variable set", window.APP_CONFIG.backendURL);
+    console.log('Backend URL:', backend_url);
+
+    // Make sure the PDF.js worker is set (important for consistent rendering)
+    if (window.pdfjsLib && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    }
+
+    // Helpers
+    const getBaseName = (path) => (path || "").split(/[\\/]/).pop();
+    const getExt = (name) => (name || "").split(".").pop().toLowerCase();
+
+    // Input type toggle
+    const inputTypeRadios = document.getElementsByName('inputType');
+    const fileUploadSection = document.getElementById('fileUploadSection');
+    const urlInputSection = document.getElementById('urlInputSection');
+    const urlInput = document.getElementById('urlInput');
+    const urlError = document.getElementById('urlError');
+
+    function updateInputType() {
+      const selectedType = Array.from(inputTypeRadios).find(r => r.checked).value;
+      if (selectedType === 'file') {
+        fileUploadSection.style.display = '';
+        urlInputSection.style.display = 'none';
+      } else {
+        fileUploadSection.style.display = 'none';
+        urlInputSection.style.display = '';
+      }
+      updateSubmitButton();
+    }
+    inputTypeRadios.forEach(radio => radio.addEventListener('change', updateInputType));
+
+    // File upload functionality
+    // For ZIP preview mapping
+    window.zipFileMap = {};       // { "path/in/zip/file.pdf": objectURL }
+    window.zipPreviewList = [];   // [{ name, url, ext }]
+    window.zipPdfList = [];       // PDFs only for PDF navigation
+    let currentPdfIndex = 0;
+
+    const fileUpload = document.getElementById('fileUpload');
+    const fileInput = document.getElementById('fileInput');
+    const uploadedFiles = document.getElementById('uploadedFiles');
+    const fileError = document.getElementById('fileError');
+    const submitBtn = document.getElementById('submitBtn');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    let selectedFile = null;
+
+    // Allowed file types
+    const allowedTypes = ['application/zip', 'application/pdf', 'image/png', 'image/jpeg', 'image/jpg'];
+    const allowedExtensions = ['.zip', '.pdf', '.png', '.jpeg', '.jpg'];
+
+    // Update submit button state
+    function updateSubmitButton() {
+      const selectedType = Array.from(inputTypeRadios).find(r => r.checked).value;
+      if (selectedType === 'file') {
+        submitBtn.disabled = !selectedFile;
+      } else {
+        submitBtn.disabled = !urlInput.value.trim();
+      }
+    }
+
+    urlInput && urlInput.addEventListener('input', () => {
+      urlError.textContent = '';
+      updateSubmitButton();
+    });
+
+
+  // Click to upload
+  fileUpload.addEventListener('click', () => fileInput.click());
+  // Prevent double dialog: stop propagation when file input is clicked
+  fileInput.addEventListener('click', (e) => { e.stopPropagation(); });
+
+    // Drag and drop functionality
+    fileUpload.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      fileUpload.classList.add('dragover');
+    });
+    fileUpload.addEventListener('dragleave', () => fileUpload.classList.remove('dragover'));
+    fileUpload.addEventListener('drop', (e) => {
+      e.preventDefault();
+      fileUpload.classList.remove('dragover');
+      handleFiles(e.dataTransfer.files);
+    });
+
+    // File input change
+    fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+    async function handleFiles(files) {
+      fileError.textContent = '';
+      window.zipFileMap = {};
+      window.zipPreviewList = [];
+      window.zipPdfList = [];
+      currentPdfIndex = 0;
+
+      if (files.length > 0) {
+        const file = files[0]; // Only the first file
+        if (validateFile(file)) {
+          selectedFile = file;
+
+          // If ZIP, extract files and build maps/lists
+          if (file.name.toLowerCase().endsWith('.zip')) {
+            try {
+              const zip = await JSZip.loadAsync(file);
+              const fileMap = {};
+              const previewList = [];
+              const pdfList = [];
+              const supportedExt = ['pdf', 'jpg', 'jpeg', 'png'];
+              const promises = [];
+
+              zip.forEach((relativePath, zipEntry) => {
+                const ext = getExt(relativePath);
+                if (!zipEntry.dir && supportedExt.includes(ext)) {
+                  promises.push(
+                    zipEntry.async('blob').then(blob => {
+                      const url = URL.createObjectURL(blob);
+                      fileMap[relativePath] = url;
+                      previewList.push({ name: relativePath, url, ext });
+                      if (ext === 'pdf') {
+                        pdfList.push({ name: relativePath, url });
+                      }
+                    })
+                  );
+                }
+              });
+
+              await Promise.all(promises);
+              // Sort to have deterministic order
+              previewList.sort((a,b) => a.name.localeCompare(b.name));
+              pdfList.sort((a,b) => a.name.localeCompare(b.name));
+
+              window.zipFileMap = fileMap;
+              window.zipPreviewList = previewList;
+              window.zipPdfList = pdfList;
+              currentPdfIndex = 0;
+            } catch (err) {
+              console.error(err);
+              fileError.textContent = 'Failed to read ZIP file.';
+              window.zipFileMap = {};
+              window.zipPreviewList = [];
+              window.zipPdfList = [];
+            }
+          } else {
+            // Non-ZIP single file → still map it for preview
+            const url = URL.createObjectURL(file);
+            const ext = getExt(file.name);
+            window.zipFileMap[file.name] = url;
+            if (['pdf','jpg','jpeg','png'].includes(ext)) {
+              window.zipPreviewList = [{ name: file.name, url, ext }];
+              if (ext === 'pdf') window.zipPdfList = [{ name: file.name, url }];
+            }
+          }
+
+          displayFile();
+          updateSubmitButton();
+        } else {
+          fileError.textContent = 'Only ZIP, PDF, PNG, JPEG, JPG files are allowed.';
+          selectedFile = null;
+          updateSubmitButton();
+        }
+      }
+    }
+
+    function validateFile(file) {
+      const fileExtension = '.' + getExt(file.name);
+      return allowedExtensions.includes(fileExtension) || allowedTypes.includes(file.type);
+    }
+
+    function displayFile() {
+      uploadedFiles.innerHTML = '';
+      if (selectedFile) {
+        const fileDiv = document.createElement('div');
+        fileDiv.className = 'uploaded-file';
+        fileDiv.innerHTML = `
+          <span>${selectedFile.name} (${(selectedFile.size / 1024 / 1024).toFixed(2)} MB)</span>
+          <button type="button" class="remove-file" onclick="removeFile()">Remove</button>
+        `;
+        uploadedFiles.appendChild(fileDiv);
+      }
+    }
+
+    function removeFile() {
+      selectedFile = null;
+      fileInput.value = '';
+      window.zipFileMap = {};
+      window.zipPreviewList = [];
+      window.zipPdfList = [];
+      currentPdfIndex = 0;
+      displayFile();
+      updateSubmitButton();
+    }
+
+    // Input list (chips)
+    const inputField = document.getElementById('inputField');
+    const inputTags = document.getElementById('inputTags');
+    let inputValues = [];
+
+    inputField.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const value = inputField.value.trim();
+        if (value && !inputValues.includes(value)) {
+          inputValues.push(value);
+          displayTags();
+          inputField.value = '';
+        }
+      }
+    });
+
+    function displayTags() {
+      inputTags.innerHTML = '';
+      inputValues.forEach((value, index) => {
+        const tag = document.createElement('div');
+        tag.className = 'tag';
+        tag.innerHTML = `${value}<button type="button" class="tag-remove" onclick="removeTag(${index})">×</button>`;
+        inputTags.appendChild(tag);
+      });
+    }
+    function removeTag(index) { inputValues.splice(index, 1); displayTags(); }
+
+    // Loading overlay
+    function showLoading() { document.getElementById('loadingOverlay').style.display = 'flex'; }
+    function hideLoading() { document.getElementById('loadingOverlay').style.display = 'none'; }
+
+    // Dummy extractor (fallback)
+    function generateDummyValues(inputValues) {
+      const dummyData = {
+        'Name': 'John Smith',
+        'Account Number': '1234567890',
+        'CNIC': '12345-6789012-3',
+        'Phone Number': '+92-300-1234567',
+        'Address': '123 Main Street, Lahore',
+        'Date of Birth': '1990-05-15',
+        'Email': 'john.smith@email.com',
+        'Salary': 'PKR 75,000',
+        'Department': 'Engineering',
+        'Employee ID': 'EMP001'
+      };
+
+      if (inputValues && inputValues.length > 0) {
+        const results = {};
+        const dummyValues = ['Sample Data A','Sample Data B','Example Value','Extracted Info','Document Data','123ABC','Test Result'];
+        inputValues.forEach(value => {
+          results[value] = dummyValues[Math.floor(Math.random() * dummyValues.length)];
+        });
+        return results;
+      }
+      return dummyData;
+    }
+
+    // Modal helpers
+    function showResultsModal() {
+      document.getElementById('modalOverlay').classList.add('show');
+    }
+    function closeResultsModal() {
+      document.getElementById('modalOverlay').classList.remove('show');
+    }
+    document.getElementById('modalOverlay').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('modalOverlay')) closeResultsModal();
+    });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeResultsModal(); });
+
+    // Pagination state
+    let paginatedResults = [];
+    let currentResultIndex = 0;
+  // Edit mode removed; editing is now inline on double-click
+
+    // Core: ensure results are aligned with ZIP file list if needed
+    function normalizeResultsWithZip(results) {
+      const isZip = selectedFile && selectedFile.name.toLowerCase().endsWith('.zip');
+      if (!isZip || window.zipPreviewList.length === 0) return results;
+
+      // Convert to array form
+      let arr = [];
+      if (Array.isArray(results)) {
+        arr = results.slice();
+      } else if (results && typeof results === 'object') {
+        arr = [results];
+      } else {
+        arr = [];
+      }
+
+      const anyHasFile = arr.some(r => r && (r.file_name || r.file_url));
+
+      // If only one result (or none have file pointers), fan-out across ZIP files.
+      if (arr.length <= 1 || !anyHasFile) {
+        const base = arr[0] || {};
+        return window.zipPreviewList.map(f => ({ ...base, file_name: f.name }));
+      }
+
+      // If multiple results but still no file pointers, align by index
+      if (!anyHasFile) {
+        return arr.map((r, i) => ({
+          ...r,
+          file_name: window.zipPreviewList[i] ? window.zipPreviewList[i].name : r.file_name
+        }));
+      }
+
+      return arr;
+    }
+
+    function displayResults(results) {
+      // Shape results
+      let shaped;
+      if (Array.isArray(results)) {
+        shaped = results.filter(obj => !(obj && typeof obj === 'object' && Object.keys(obj).length === 1 && obj._metadata));
+      } else if (results && typeof results === 'object') {
+        shaped = [results];
+      } else {
+        shaped = [];
+      }
+
+      // Align with ZIP files if needed
+      shaped = normalizeResultsWithZip(shaped);
+
+      paginatedResults = shaped;
+      currentResultIndex = 0;
+      syncPdfIndexWithCurrentResult();
+      renderCurrentResult();
+      showResultsModal();
+    }
+
+  // toggleEditMode removed
+
+    function updateFieldValue(field, value) {
+      if (!paginatedResults.length) return;
+      paginatedResults[currentResultIndex][field] = value;
+    }
+
+    function submitEditedResults() {
+      // Send full edited results payload out of the modal (placeholder).
+      post_resultant_data(paginatedResults);
+    }
+    function post_resultant_data(results) { console.log('Submitted edited results:', results); }
+
+    function updatePaginationControls() {
+      const prevBtn = document.getElementById('prevResultBtn');
+      const nextBtn = document.getElementById('nextResultBtn');
+      const counter = document.getElementById('resultCounter');
+      if (!paginatedResults.length) {
+        prevBtn.disabled = true; nextBtn.disabled = true; counter.textContent = '';
+        return;
+      }
+      prevBtn.disabled = currentResultIndex === 0;
+      nextBtn.disabled = currentResultIndex === paginatedResults.length - 1;
+      counter.textContent = `Result ${currentResultIndex + 1} of ${paginatedResults.length}`;
+    }
+
+    function showPrevResult() {
+      if (currentResultIndex > 0) {
+        currentResultIndex--;
+        syncPdfIndexWithCurrentResult();
+        renderCurrentResult();
+      }
+    }
+    function showNextResult() {
+      if (currentResultIndex < paginatedResults.length - 1) {
+        currentResultIndex++;
+        syncPdfIndexWithCurrentResult();
+        renderCurrentResult();
+      }
+    }
+
+    // Return the preview file (url/ext/name/pdfIndex if PDF) for a given result/index
+    function getPreviewForResult(result, index) {
+      const selectedType = Array.from(inputTypeRadios).find(r => r.checked).value;
+      // 1) Direct URL
+      if (result.file_url) {
+        const ext = getExt(result.file_url);
+        return { url: result.file_url, ext, name: getBaseName(result.file_url), pdfIndex: findPdfIndexByName(getBaseName(result.file_url)) };
+      }
+      // 2) File name in ZIP map (exact or base match)
+      if (selectedType === 'file' && result.file_name && window.zipFileMap) {
+        const exact = window.zipFileMap[result.file_name];
+        if (exact) {
+          const ext = getExt(result.file_name);
+          return { url: exact, ext, name: result.file_name, pdfIndex: findPdfIndexByName(result.file_name) };
+        }
+        const baseName = getBaseName(result.file_name);
+        const foundKey = Object.keys(window.zipFileMap).find(k => getBaseName(k) === baseName);
+        if (foundKey) {
+          const ext = getExt(foundKey);
+          return { url: window.zipFileMap[foundKey], ext, name: foundKey, pdfIndex: findPdfIndexByName(foundKey) };
+        }
+      }
+      // 3) Fallback to the N-th file from the ZIP (only for file mode)
+      if (selectedType === 'file' && window.zipPreviewList.length) {
+        const file = window.zipPreviewList[Math.min(index, window.zipPreviewList.length - 1)];
+        return { url: file.url, ext: file.ext, name: file.name, pdfIndex: findPdfIndexByName(file.name) };
+      }
+      return null;
+    }
+
+    function findPdfIndexByName(nameOrPath) {
+      const idx = window.zipPdfList.findIndex(pdf => {
+        const a = getBaseName(pdf.name);
+        const b = getBaseName(nameOrPath);
+        return a === b;
+      });
+      return idx >= 0 ? idx : null;
+    }
+
+    function syncPdfIndexWithCurrentResult() {
+      if (!window.zipPdfList.length || !paginatedResults.length) return;
+      const result = paginatedResults[currentResultIndex];
+      const prev = getPreviewForResult(result, currentResultIndex);
+      if (prev && prev.ext === 'pdf' && prev.pdfIndex !== null) {
+        currentPdfIndex = prev.pdfIndex;
+      }
+    }
+
+    function renderCurrentResult() {
+      const tableBody = document.getElementById('outputTableBody');
+      tableBody.innerHTML = '';
+      const submitBtnEl = document.getElementById('submitEditBtn');
+      const table = document.getElementById('outputTable');
+      table.classList.remove('edit-mode');
+      submitBtnEl.style.display = 'flex';
+
+      if (!paginatedResults.length) {
+        tableBody.innerHTML = '<tr><td colspan="2">No results found.</td></tr>';
+      } else {
+        const result = paginatedResults[currentResultIndex];
+        Object.entries(result).forEach(([fieldName, extractedValue]) => {
+          if (["_metadata", "file_name", "file_url"].includes(fieldName)) return;
+          const row = document.createElement('tr');
+          row.setAttribute('data-field', fieldName);
+          row.innerHTML = `<td><strong>${fieldName}</strong></td><td class="editable-cell" tabindex="0">${extractedValue ?? ''}</td>`;
+          tableBody.appendChild(row);
+        });
+      }
+
+      // Add double-click event for inline editing
+      Array.from(tableBody.querySelectorAll('.editable-cell')).forEach(cell => {
+        cell.ondblclick = function(e) {
+          if (cell.querySelector('input')) return; // Already editing
+          const oldValue = cell.textContent;
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.value = oldValue;
+          input.style.width = '98%';
+          input.style.padding = '6px 8px';
+          input.style.border = '1px solid #e2e8f0';
+          input.style.borderRadius = '6px';
+          input.onblur = function() {
+            finishEdit(cell, input.value);
+          };
+          input.onkeydown = function(ev) {
+            if (ev.key === 'Enter') {
+              input.blur();
+            } else if (ev.key === 'Escape') {
+              cell.textContent = oldValue;
+            }
+          };
+          cell.textContent = '';
+          cell.appendChild(input);
+          input.focus();
+          input.select();
+        };
+      });
+
+      function finishEdit(cell, newValue) {
+        const row = cell.parentElement;
+        const field = row.getAttribute('data-field');
+        updateFieldValue(field, newValue);
+        cell.textContent = newValue;
+      }
+
+      // Preview logic
+      const previewContainer = document.getElementById('modalPreviewContainer');
+      previewContainer.innerHTML = '';
+
+      if (paginatedResults.length) {
+        const result = paginatedResults[currentResultIndex];
+        const prev = getPreviewForResult(result, currentResultIndex);
+
+        if (prev) {
+          if (/(jpg|jpeg|png)$/i.test(prev.ext)) {
+            const img = document.createElement('img');
+            img.src = prev.url;
+            img.alt = 'Image Preview';
+            previewContainer.appendChild(img);
+          } else if (prev.ext === 'pdf') {
+            // Update currentPdfIndex to this file (ensures nav reflects correct PDF)
+            if (prev.pdfIndex !== null) currentPdfIndex = prev.pdfIndex;
+            renderPDFPreviewWithNavigation(previewContainer, prev.url, prev.name);
+          } else {
+            previewContainer.innerHTML = '<div style="color:#888;text-align:center;">No preview available for this file type.</div>';
+          }
+        } else {
+          previewContainer.innerHTML = '<div style="color:#888;text-align:center;">No preview available.</div>';
+        }
+      } else {
+        previewContainer.innerHTML = '<div style="color:#888;text-align:center;">No preview available.</div>';
+      }
+
+      updatePaginationControls();
+    }
+
+    // PDF navigation (between PDFs in the ZIP, independent of result pagination)
+    function showPrevPDF() {
+      if (currentPdfIndex > 0) {
+        currentPdfIndex--;
+        const previewContainer = document.getElementById('modalPreviewContainer');
+        const pdfUrl = window.zipPdfList[currentPdfIndex].url;
+        const fileName = window.zipPdfList[currentPdfIndex].name;
+        renderPDFPreviewWithNavigation(previewContainer, pdfUrl, fileName);
+      }
+    }
+    function showNextPDF() {
+      if (currentPdfIndex < window.zipPdfList.length - 1) {
+        currentPdfIndex++;
+        const previewContainer = document.getElementById('modalPreviewContainer');
+        const pdfUrl = window.zipPdfList[currentPdfIndex].url;
+        const fileName = window.zipPdfList[currentPdfIndex].name;
+        renderPDFPreviewWithNavigation(previewContainer, pdfUrl, fileName);
+      }
+    }
+
+    async function renderPDFPreviewWithNavigation(container, fileUrl, fileName = '') {
+      container.innerHTML = '';
+      try {
+        // Controls (only if more than 1 PDF in the ZIP)
+        if (window.zipPdfList.length > 1) {
+          const navControls = document.createElement('div');
+          navControls.className = 'pdf-nav-controls';
+
+          const prevBtn = document.createElement('button');
+          prevBtn.textContent = 'Previous PDF';
+          prevBtn.onclick = showPrevPDF;
+          prevBtn.disabled = currentPdfIndex === 0;
+
+          const nextBtn = document.createElement('button');
+          nextBtn.textContent = 'Next PDF';
+          nextBtn.onclick = showNextPDF;
+          nextBtn.disabled = currentPdfIndex === window.zipPdfList.length - 1;
+
+          const pdfInfo = document.createElement('span');
+          pdfInfo.textContent = `PDF ${currentPdfIndex + 1} / ${window.zipPdfList.length}${fileName ? ' — ' + getBaseName(fileName) : ''}`;
+
+          navControls.appendChild(prevBtn);
+          navControls.appendChild(pdfInfo);
+          navControls.appendChild(nextBtn);
+          container.appendChild(navControls);
+        }
+
+        const pdf = await pdfjsLib.getDocument(fileUrl).promise;
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+          const page = await pdf.getPage(pageNum);
+          const scale = 1.2;
+          const viewport = page.getViewport({ scale });
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
+          await page.render({ canvasContext: ctx, viewport }).promise;
+          container.appendChild(canvas);
+        }
+      } catch (err) {
+        console.error("PDF render error:", err);
+        container.innerHTML = '<div style="color:#888;text-align:center;padding:2rem;">Failed to render PDF preview.</div>';
+      }
+    }
+
+    // Simpler PDF render (unused now, kept for completeness)
+    async function renderPDFPreview(container, fileUrl) {
+      container.innerHTML = '';
+      try {
+        const pdf = await pdfjsLib.getDocument(fileUrl).promise;
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+          const page = await pdf.getPage(pageNum);
+          const scale = 1.2;
+          const viewport = page.getViewport({ scale });
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
+          await page.render({ canvasContext: ctx, viewport }).promise;
+          container.appendChild(canvas);
+        }
+      } catch (err) {
+        console.error("PDF render error:", err);
+        container.innerHTML = '<div style="color:#888;text-align:center;">Failed to render PDF.</div>';
+      }
+    }
+
+    // Send file or URL and inputValues to backend REST API
+    async function processForm({file, urlValue, inputValues}) {
+      let endpoint = '';
+      let body;
+      let isFile = !!file;
+      if (isFile) {
+        // endpoint = 'http://localhost:8000/extract';
+        endpoint = backend_url + 'extract';
+        body = new FormData();
+        body.append('upload_file', file);
+        body.append('fields', inputValues && inputValues.length ? JSON.stringify(inputValues) : '');
+      } else {
+        endpoint = backend_url + 'extract_with_url';
+        body = JSON.stringify({
+          file_url: urlValue,
+          fields: inputValues && inputValues.length ? JSON.stringify(inputValues) : ''
+        });
+      }
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          body,
+          headers: isFile ? undefined : { 'Content-Type': 'application/json', 'Accept': 'application/json' }
+        });
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('API Error Response:', errorText);
+          throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+        }
+        return await response.json();
+      } catch (error) {
+        console.error('Network/API Error:', error);
+        // Fallback for demo
+        if (error instanceof TypeError && (error.message.includes('fetch') || error.message.includes('Failed to fetch'))) {
+          return generateDummyValues(inputValues);
+        }
+        throw error;
+      }
+    }
+
+    // Form submission
+    document.getElementById('uploadForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const selectedType = Array.from(inputTypeRadios).find(r => r.checked).value;
+      let valid = true;
+
+      if (selectedType === 'file') {
+        if (!selectedFile) {
+          alert('Please upload a file before submitting.');
+          valid = false;
+        }
+      } else {
+        const urlVal = urlInput.value.trim();
+        if (!urlVal) { urlError.textContent = 'Please enter a URL.'; valid = false; }
+        else { urlError.textContent = ''; }
+      }
+      if (!valid) return;
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Processing...';
+      showLoading();
+
+      setTimeout(() => {
+        processForm({
+          file: selectedType === 'file' ? selectedFile : null,
+          urlValue: selectedType === 'url' ? urlInput.value.trim() : null,
+          inputValues
+        })
+        .then((results) => {
+          hideLoading();
+          displayResults(results);
+        })
+        .catch((error) => {
+          console.error('Error:', error);
+          hideLoading();
+          let errorMessage = 'An error occurred while processing the form.';
+          if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+            errorMessage = 'Unable to connect to the API server. Please ensure the backend server is running';
+          } else if (error.message.includes('API request failed')) {
+            errorMessage = `API Error: ${error.message}. Please check the server logs.`;
+          }
+          errorMessage += '\n\nPlease check the browser console for more details.';
+          alert(errorMessage);
+        })
+        .finally(() => {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Submit';
+          updateSubmitButton();
+        });
+      }, 100);
+    });
+
+    // Init
+    updateInputType();
+    updateSubmitButton();
+  </script>
+</body>
+</html>
