@@ -17,8 +17,8 @@
 ## Overview
 
 This system provides a complete backend pipeline for converting document
-files into structured JSON using: 1. **Local OCR inference** (fast,
-GPU-enabled, offline-capable)\
+files into structured JSON using:
+1. **Local OCR inference** (fast, GPU-enabled, offline-capable)\
 2. **OpenAI GPT extraction** for user-defined fields\
 3. **FastAPI** for easy integration with front-end apps or automation
 workflows
@@ -28,6 +28,7 @@ archives.
 
 ## Key Features
 (Complete project is paid for more query mail at ha2153329@gmail.com)
+
 ### OCR Layer
 
 -   Uses **Doctr OCR** with locally stored `.pt` model weights\
